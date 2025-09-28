@@ -1,14 +1,26 @@
-// lib/mongodb.ts
 import { MongoClient } from "mongodb";
-var _mongoClientPromise: Promise<MongoClient> | undefined;
+
 const uri = process.env.MONGODB_URI!;
+const options = {};
+
+// Ensure global caching for dev
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
-if (!_mongoClientPromise) {
-  const client = new MongoClient(uri);
-  _mongoClientPromise = client.connect();
+if (!uri) {
+  throw new Error("Please add your Mongo URI to .env");
 }
-clientPromise = _mongoClientPromise;
+
+if (process.env.NODE_ENV === "development") {
+  // Use global variable to avoid multiple connections
+  if (!(global as any)._mongoClientPromise) {
+    client = new MongoClient(uri, options);
+    (global as any)._mongoClientPromise = client.connect();
+  }
+  clientPromise = (global as any)._mongoClientPromise;
+} else {
+  client = new MongoClient(uri, options);
+  clientPromise = client.connect();
+}
 
 export default clientPromise;

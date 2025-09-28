@@ -1,22 +1,15 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/authOptions";
-import { LogoutButton } from "@/components/LogoutButton";
+import DashboardClient from "@/components/DashboardClient";
 
-export default async function Dashboard() {
+export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session) {
-    redirect("/");
+  if (!session || !session.user) {
+    redirect("/"); // redirect if no session or user
   }
 
-  return (
-    <div className="p-10">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
-      <p>Welcome, {session.user?.email}</p>
-
-      {/* Logout button */}
-      <LogoutButton />
-    </div>
-  );
+  // We assert that session.user is defined using "!"
+  return <DashboardClient user={session.user!} />;
 }
