@@ -275,59 +275,69 @@ export default function DashboardClient({ user }: { user: User }) {
   };
 
   const saveRename = async (chatId: string) => {
-    if (!editingTitle.trim()) return;
-    
-    try {
-      const res = await fetch(`/api/chat-sessions/${chatId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: editingTitle.trim() }),
-      });
+  if (!editingTitle.trim()) return;
 
-      if (res.ok) {
-        setChatSessions(prev => prev.map(session => 
-          session.id === chatId 
-            ? { ...session, title: editingTitle.trim() }
-            : session
-        ));
-        cancelRename();
-      } else {
-        setError("Failed to rename chat");
-      }
-    } catch (error) {
-      setError("Failed to rename chat");
-    }
-  };
+  try {
+    const res = await fetch("/api/chat-sessions/rename", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chatId, title: editingTitle.trim() }),
+    });
 
-  const deleteChat = async (chatId: string) => {
-    if (!confirm("Are you sure you want to delete this chat? This action cannot be undone.")) {
+    if (!res.ok) {
+      const data = await res.json();
+      console.error("Rename error:", data);
+      setError(data?.error || "Failed to rename chat");
       return;
     }
-    
-    try {
-      const res = await fetch(`/api/chat-sessions/${chatId}`, {
-        method: "DELETE",
-      });
 
-      if (res.ok) {
-        setChatSessions(prev => prev.filter(session => session.id !== chatId));
-        
-        if (activeChatId === chatId) {
-          const remainingSessions = chatSessions.filter(s => s.id !== chatId);
-          if (remainingSessions.length > 0) {
-            setActiveChatId(remainingSessions[0].id);
-          } else {
-            setActiveChatId(null);
-            setChats([]);
-          }
+    setChatSessions(prev =>
+      prev.map(session =>
+        session.id === chatId ? { ...session, title: editingTitle.trim() } : session
+      )
+    );
+    cancelRename();
+  } catch (err) {
+    console.error("Rename exception:", err);
+    setError("Failed to rename chat");
+  }
+};
+
+
+
+  const deleteChat = async (chatId: string) => {
+  if (!confirm("Are you sure you want to delete this chat? This action cannot be undone.")) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/chat-sessions/delete`, { // updated route
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chatId }), // send chatId as string
+    });
+
+    if (res.ok) {
+      setChatSessions(prev => prev.filter(session => session.id !== chatId));
+
+      if (activeChatId === chatId) {
+        const remainingSessions = chatSessions.filter(s => s.id !== chatId);
+        if (remainingSessions.length > 0) {
+          setActiveChatId(remainingSessions[0].id);
+        } else {
+          setActiveChatId(null);
+          setChats([]);
         }
-      } else {
-        setError("Failed to delete chat");
       }
-    } catch (error) {
-      setError("Failed to delete chat");
+    } else {
+      const data = await res.json();
+      setError(data?.error || "Failed to delete chat");
     }
-  };
+  } catch (error) {
+    setError("Failed to delete chat");
+  }
+};
+
 
   useEffect(() => {
     if (activeChatId) {
