@@ -102,7 +102,7 @@ export default function DashboardClient({ user }: { user: User }) {
       if (res.ok) {
         const data = await res.json();
         console.log(`Fetched ${data.length} messages for session ${activeChatId}`); // Debug log
-        setChats(data.reverse());
+        setChats(data);
       } else {
         console.error("Failed to fetch chats:", res.status, res.statusText);
         setError("Failed to fetch chat history");
@@ -251,7 +251,7 @@ export default function DashboardClient({ user }: { user: User }) {
       if (res.ok) {
         const data = await res.json();
         console.log(`Loaded ${data.length} messages for session ${chatId}`); // Debug log
-        setChats(data.reverse());
+        setChats(data);
       } else {
         console.error("Failed to load chat history:", res.status);
         setError("Failed to load chat history");
